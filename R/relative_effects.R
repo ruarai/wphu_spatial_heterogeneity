@@ -1,14 +1,15 @@
 
 
 
-date_period <- c(ymd("2021-11-01"), ymd("2022-07-01"))
+#date_period <- c(ymd("2020-05-01"), ymd("2020-10-01"))
 
-derivatives <- gratia::derivatives(
+derivatives_cases <- gratia::derivatives(
   gam_fit_cases,
+  order = 1,
   terms = "s(t)",
   newdata = expand_grid(dow = 3, LGA = LGAs, t = case_counts$t %>% unique()),
   partial_match = TRUE,
-  n = 4000,
+  n = 12000,
   ncores = 16
 )
 
@@ -22,13 +23,28 @@ derivatives_mobility <- gratia::derivatives(
 )
 
 
-case_growth <- derivatives %>%
+case_growth <- derivatives_cases %>%
   mutate(LGA = str_remove(smooth, "s\\(t\\)\\:LGA"),
          date = ymd("2020-01-01") + days(floor(data))) %>%
   
   select(LGA, date, derivative) %>%
   
+  arrange(date) %>%
+  group_by(LGA) %>%
+  mutate(derivative = derivative - lag(derivative)) %>% 
+  
   filter(date >= date_period[1], date <= date_period[2])
+
+
+ggplot(case_growth) +
+  
+  geom_line(aes(x = date, y = derivative, colour = LGA)) +
+  
+  plot_theme +
+  
+  ggtitle("Case incidence derivative (growth rate)")+
+  
+  ggokabeito::scale_colour_okabe_ito()
 
 relative_growth <- case_growth %>%
   
@@ -38,7 +54,6 @@ relative_growth <- case_growth %>%
   
   mutate(
     rel_growth = derivative - derivative[LGA == "Melbourne (C)"]
-    #rel_growth = derivative - mean(derivative)
   ) %>%
   
   group_by(LGA) %>%
@@ -47,9 +62,9 @@ relative_growth <- case_growth %>%
 
 
 
-p1 <- ggplot(relative_growth) +
+p_case_rel_growth <- ggplot(relative_growth) +
   
-  geom_line(aes(x = date, y = rel_growth, colour = LGA)) +
+  geom_line(aes(x = date + days(2), y = rel_growth, colour = LGA)) +
   
   ggokabeito::scale_colour_okabe_ito() +
   
@@ -68,34 +83,23 @@ relative_mobility <- derivatives_mobility %>%
   
   filter(date >= date_period[1], date <= date_period[2]) %>%
   
-  select(LGA, date, derivative) %>%
-  
   group_by(date = as_date(date)) %>%
   
   mutate(
     rel_change = derivative - derivative[LGA == "Melbourne (C)"]
-    #rel_change = derivative - mean(derivative)
   )
 
 
+ggplot(relative_mobility) +
+  geom_line(aes(x = date, y = derivative, colour = LGA)) +
+  
+  plot_theme +
+  
+  ggtitle("Mobility derivative (change in time spent at home)") +
+  
+  ggokabeito::scale_colour_okabe_ito()
 
-
-# relative_mobility <- pred_data_mobility %>%
-#   filter(!weekend) %>% 
-#   select(LGA, date, pred_change)  %>%
-#   
-#   group_by(LGA) %>%
-#   mutate(pred_change = pred_change - mean(pred_change)) %>% 
-#   
-#   group_by(date = as_date(date)) %>%
-#   
-#   mutate(#pred_change = log(pred_change / 100 + 1),
-#          rel_change = pred_change - pred_change[LGA == "Melbourne (C)"])
-
-
-
-
-p2 <- ggplot(relative_mobility) +
+p_mobility_rel_change <- ggplot(relative_mobility) +
   
   geom_line(aes(x = date, y = -rel_change, colour = LGA)) +
   
@@ -105,31 +109,72 @@ p2 <- ggplot(relative_mobility) +
   
   plot_theme
 
+
+
+
+
 cowplot::plot_grid(
-  p2, p1, ncol = 1
+  p_mobility_rel_change,
+  p_case_rel_growth,
+  ncol = 1
 )
+
+
 
 
 
 relative_mobility %>%
   select(-derivative) %>% 
   left_join(relative_growth) %>%
-  filter(date >= ymd("2021-11-15")) %>% 
+  filter(LGA != "Melbourne (C)") %>%
   
   group_by(LGA) %>%
   arrange(date) %>%
-  mutate(rel_growth = lead(rel_growth, 6)) %>% 
+  mutate(lead_rel_growth = lag(rel_growth, 2)) %>%
   
-  ggplot() +
+  ggplot(aes(x = rel_change, y = -lead_rel_growth)) +
   
-  geom_point(aes(x = rel_change, y = rel_growth))
-  
-  geom_line(aes(x = date, y = rel_growth, colour = LGA)) +
-  
-  geom_line(aes(x = date, y = -rel_change / 5, colour = LGA),
-            linetype = "dotted") +
-  
-  ggokabeito::scale_colour_okabe_ito() +
+  geom_point(size = 0.4) +
+  geom_smooth(method = "lm") +
   
   plot_theme
 
+relative_mobility %>%
+  select(-derivative) %>% 
+  left_join(relative_growth) %>%
+  filter(LGA != "Melbourne (C)") %>%
+  
+  group_by(LGA) %>%
+  arrange(date) %>%
+  mutate(lead_rel_growth = lag(rel_growth, 2)) %>%
+  
+  ggplot() +
+  
+  geom_line(aes(x = date, y = rel_change / 6, group = LGA),
+            colour = "green") +
+  geom_line(aes(x = date, y = -lead_rel_growth, group = LGA)) +
+  
+  plot_theme
+  
+  
+  
+
+relative_mobility %>%
+  mutate(date = as_date(date)) %>% 
+  filter(LGA != "Melbourne (C)") %>% 
+  select(-derivative) %>% 
+  left_join(relative_growth %>% mutate(date = as_date(date))) %>%
+  
+  group_by(LGA) %>%
+  arrange(date) %>%
+
+  mutate(rel_growth = rel_growth < 0,
+         rel_change = rel_change > 0) %>%
+  
+  ggplot() +
+  geom_tile(aes(x = date + days(2), y = 0, fill = rel_growth)) +
+  geom_tile(aes(x = date, y = 1, fill = rel_change)) +
+  
+  scale_fill_brewer(type = "qual", palette = 6) +
+  
+  facet_wrap(~LGA)

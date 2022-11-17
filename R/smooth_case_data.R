@@ -1,4 +1,7 @@
 
+library(tidyverse)
+library(lubridate)
+library(targets)
 
 source("R/plot_theme.R")
 
@@ -6,7 +9,7 @@ source("R/plot_theme.R")
 case_data <- tar_read(case_data)
 LGAs <- unique(case_data$LGA)
 
-date_period <- c(ymd("2021-07-01"), ymd("2022-07-01"))
+date_period <- c(ymd("2021-11-01"), ymd("2022-07-01"))
 
 
 
@@ -35,14 +38,14 @@ library(mgcv)
 theta <- 25
 
 gam_fit_cases <- bam(
-  n_cases ~ s(t, k = 80, by = LGA) + s(dow, k = 4) + LGA,
+  n_cases ~ s(t, k = 60, by = LGA) + s(dow, k = 4) + LGA,
   
   data = case_counts,
   family = nb(theta = 70),
   discrete = TRUE
 )
 
-
+summary(gam_fit_cases)
 
 pred_data_cases <- expand_grid(
   LGA = LGAs,
@@ -69,7 +72,7 @@ pred_data_cases <- expand_grid(
 
 
 modelling_data_cases <- pred_data_cases %>%
-  filter(date >= date_period[1] + days(30),
+  filter(date >= date_period[1] + days(14),
          date <= date_period[2] - days(14)) %>%
   
   left_join(
@@ -91,11 +94,16 @@ ggplot(modelling_data_cases) +
   geom_line(aes(x = date, y = pred_cases_lower)) +
   
   geom_point(aes(x = date, y = n_cases),
-             colour = ggokabeito::palette_okabe_ito(5)) +
+             colour = ggokabeito::palette_okabe_ito(5),
+             size = 0.6) +
   
   scale_y_log10(limits = c(1, NA)) +
   
   facet_wrap(~LGA) +
+  
+  xlab("Date") + ylab("Count") +
+  
+  ggtitle("Case incidence") +
   
   plot_theme
 
