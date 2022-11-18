@@ -10,7 +10,7 @@ source("R/population.R")
 case_data <- tar_read(case_data)
 LGAs <- unique(case_data$LGA)
 
-date_period <- c(ymd("2021-11-01"), ymd("2022-05-15"))
+date_period <- c(ymd("2021-11-01"), ymd("2022-03-15"))
 
 date_to_t <- function(date) { as.numeric(date - date_period[1]) }
 
@@ -34,12 +34,6 @@ case_counts <- case_data %>%
          LGA = factor(LGA),
          dow = wday(date)) %>%
   
-  mutate(
-    n_cases = if_else(date >= ymd("2021-12-15") & date <= ymd("2022-01-20"),
-                      as.integer(n_cases * 3),
-                      n_cases)
-  ) %>%
-  
   filter(date <= date_period[2] - days(7)) %>%
   
   filter(LGA == "Melbourne (C)")
@@ -62,6 +56,8 @@ ggplot(case_counts) +
   
   plot_theme
 
+
+source("R/smooth_mobility_data.R")
 
 fit_data <- case_counts %>%
   left_join(pred_data_mobility %>% select(LGA, date, mobility_change = pred_change), by = c("LGA", "date"))
@@ -91,8 +87,10 @@ fit <- mod$sample(
 
 fit <- mod$optimize(
   data = data_list,
-  seed = 123
+  seed = 124
 )
+
+print(fit, max_rows = 12)
 
 c("mu", "mu_BA1", "mu_BA2", "mu_mobility", "mu_immunity", "slope_immunity", "holiday_ascertainment",
   "duration_immunity", "t_BA1", "t_BA2") %>%
@@ -120,11 +118,11 @@ spread_draws(fit$draws(), n_cases_sim[t]) %>%
   geom_line(aes(x = t, y = n_cases_sim, group = .draw)) +
   
   geom_line(aes(x = t, y = n_cases), colour = "red",
-            case_counts) +
+            case_counts)# +
   
-  scale_y_log10() +
+  #scale_y_log10()# +
   
-  coord_cartesian(ylim = c(10, 6000))
+  #coord_cartesian(ylim = c(10, 6000))
 
 
 
@@ -135,3 +133,10 @@ spread_draws(fit$draws(), growth_rate[t]) %>%
   
   coord_cartesian(ylim = c(-0.5, 1))
 
+
+spread_draws(fit$draws(), growth_mult_t[t]) %>%
+  filter(.draw %% 100 == 1) %>% 
+  ggplot() +
+  geom_line(aes(x = t, y = growth_mult_t, group = .draw)) +
+  
+  coord_cartesian(ylim = c(-0.5, 1))

@@ -37,7 +37,7 @@ case_growth %>%
 
 
 immunity_fn <- function(days_before) {
-  plogis((2.2 * 100 - days_before) * 0.31)
+  plogis((2 * 100 - days_before) * 0.31)
 }
 
 tibble(days_before = 1:360) %>%
