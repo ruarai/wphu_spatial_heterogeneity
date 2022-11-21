@@ -9,7 +9,7 @@ source("R/plot_theme.R")
 case_data <- tar_read(case_data)
 LGAs <- unique(case_data$LGA)
 
-date_period <- c(ymd("2021-11-01"), ymd("2022-07-01"))
+#date_period <- c(ymd("2021-11-01"), ymd("2022-07-01"))
 
 
 
@@ -38,7 +38,7 @@ library(mgcv)
 theta <- 25
 
 gam_fit_cases <- bam(
-  n_cases ~ s(t, k = 60, by = LGA) + s(dow, k = 4) + LGA,
+  n_cases ~ s(t, k = 20, by = LGA) + s(dow, k = 4) + LGA,
   
   data = case_counts,
   family = nb(theta = 70),
