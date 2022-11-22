@@ -32,7 +32,7 @@ model_data_mobility <- pred_data_mobility %>%
 
 
 
-i_LGA <- "Brimbank (C)"
+i_LGA <- "Wyndham (C)"
 
 fit_data <- modelling_data_cases %>%
   select(LGA, date, pred_cases) %>%
@@ -40,18 +40,21 @@ fit_data <- modelling_data_cases %>%
   left_join(model_data_mobility, by = c("LGA", "date")) %>%
   filter(LGA == i_LGA)
 
-
 fit_data  %>% 
-  
-  group_by(LGA) %>% 
-  
-  mutate(inf = zoo::rollsum(pred_cases, k = 14, fill = 0, align = "r"),
-         sus = pop - cumsum(pred_cases),
-         x = (sus - inf) / pop) %>%
+  mutate(
+    a = case_when(
+      LGA == "Melton (C)" ~ 0.9,
+      LGA == "Wyndham (C)" ~ 1.3,
+      TRUE ~ 1
+    ),
+    b = case_when(
+      LGA == "Wyndham (C)" ~ 0.8,
+      TRUE ~ 0.5
+    )
+  ) %>% 
   
   ggplot() +
-  
-  geom_line(aes(x = date, y = x * (1 / mobility) - 0.8)) +
+  geom_line(aes(x = date, y = 1.5 * (a - b * mobility) - 0.5 )) +
   
   geom_line(aes(x = date, y = growth_rate),
             colour = "blue",
@@ -65,48 +68,49 @@ mod <- cmdstan_model("src/growth_rate.stan")
 
 data_list <- list(
   N = nrow(fit_data),
-  t = fit_data$pred_cases,
   
   n_cases = fit_data$pred_cases,
   mobility = fit_data$mobility,
-  pop_size = population_LGAs %>% filter(LGA == "Melbourne (C)") %>% pull(pop),
   
-  theta = 20,
-  sigma_R_start = 0.1
+  theta = 70,
+  sigma_R_start = 0.3,
+  R_0_center = 1.5
 )
 
 
-
+# Fix max tree depth
 fit <- mod$sample(
   data = data_list, 
   seed = 5, 
   chains = 4, 
   parallel_chains = 4,
-  refresh = 100
+  refresh = 100,
+  iter_warmup = 1000,
+  iter_sampling = 1000
 )
 
 
-fit <- mod$optimize(
-  data = data_list, 
-  seed = 2, 
-)
+# fit <- mod$optimize(
+#   data = data_list, 
+#   seed = 2, 
+# )
 
-fit$draws(c("mu_mobility", "beta_0", "gamma", "n_cases_sim[75]")) %>%
+fit$draws(c("a", "b", "gamma", "I_log_0", "n_cases_sim[75]")) %>%
   mcmc_pairs()
 
-fit$draws(c("mu_mobility", "beta_0", "gamma")) %>%
+fit$draws(c("a", "b", "gamma")) %>%
   mcmc_hist()
 
 
 spread_draws(fit$draws(), n_cases_sim[t]) %>%
   filter(.draw %% 100 == 1) %>% 
   ggplot() +
-  geom_line(aes(x = t, y = n_cases_sim, group = .draw)) +
+  geom_line(aes(x = t, y = n_cases_sim, group = .draw),
+            alpha = 0.2) +
   
   geom_line(aes(x = 1:nrow(fit_data), y = n_cases), colour = "red",
             modelling_data_cases %>% filter(LGA == i_LGA)) +
-  
-  coord_cartesian(ylim = c(0, 100))
+  plot_theme
 
 
 
@@ -115,5 +119,31 @@ spread_draws(fit$draws(), growth_rate[t]) %>%
   ggplot() +
   geom_line(aes(x = t, y = growth_rate, group = .draw)) +
   
-  coord_cartesian(ylim = c(-0.5, 1))
+  geom_line(aes(x = 1:nrow(fit_data), y = growth_rate), colour = "red",
+            plot_data_growth %>% filter(LGA == i_LGA)) +
+  
+  coord_cartesian(ylim = c(-0.5, 1)) +
+  plot_theme
+
+
+spread_draws(fit$draws(), log_infections_t[t]) %>%
+  filter(.draw %% 100 == 1) %>% 
+  ggplot() +
+  geom_line(aes(x = t, y = log_infections_t, group = .draw)) +
+  
+  geom_point(aes(x = 1:nrow(fit_data), y = log(n_cases) ), colour = "red",
+            modelling_data_cases %>% filter(LGA == i_LGA))  +
+  plot_theme
+
+spread_draws(fit$draws(), n_cases_sim[t]) %>%
+  filter(.draw %% 100 == 1) %>% 
+  ggplot() +
+  geom_line(aes(x = t, y = n_cases_sim, group = .draw),
+            alpha = 0.2) +
+  
+  geom_point(aes(x = 1:nrow(fit_data), y = n_cases), colour = "red",
+             modelling_data_cases %>% filter(LGA == i_LGA)) +
+  
+  scale_y_log10() +
+  plot_theme
 
