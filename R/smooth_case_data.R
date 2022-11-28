@@ -72,8 +72,6 @@ pred_data_cases <- expand_grid(
 
 
 modelling_data_cases <- pred_data_cases %>%
-  filter(date >= date_period[1] + days(14),
-         date <= date_period[2] - days(14)) %>%
   
   left_join(
     case_counts %>% select(-date),

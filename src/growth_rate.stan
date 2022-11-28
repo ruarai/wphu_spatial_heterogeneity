@@ -1,67 +1,73 @@
 data {
-  int<lower=0> N;
+  int<lower=0> t_max;
+  int<lower=0> n_pops;
   
-  array[N] int<lower=0> n_cases; 
+  array[n_pops, t_max] int<lower=0> n_cases; 
+  array[n_pops, t_max] real mobility;
   
   
-  vector[N] mobility;
-  
-  real theta;
-  real sigma_R_start;
-  real R_0_center;
+  real nb_theta;
 }
 
 parameters {
-  real<lower=0> gamma;
+  vector[n_pops] a;
+  vector[n_pops] b;
   
-  real a;
-  real b;
-  
-  real I_log_0;
+  vector[n_pops] I_log_0;
 }
 
 
 model {
-  gamma ~ lognormal(0, 1);
   
-  a ~ normal(0, 0.5);
-  b ~ normal(0, 0.5);
+  a ~ normal(0, 1);
+  b ~ normal(0, 1);
+  
   I_log_0 ~ normal(0, 1);
   
-  vector[N] log_infections_t;
-  log_infections_t[1] = I_log_0;
+  array[n_pops, t_max] real log_infections_t;
   
-  for(i in 1:(N - 1)) {
-    real log_infections = log_infections_t[i];
+  for(p in 1:n_pops) {
+    log_infections_t[p, 1] = I_log_0[p];
     
-    real total_growth = a - b * mobility[i] - gamma;
-    
-    real log_infections_next = log_infections + total_growth;
-    
-    log_infections_t[i + 1] = log_infections_next;
-    
-    n_cases[i + 1] ~ neg_binomial_2_log(log_infections_next, theta);
+    for(t in 1:(t_max - 1)) {
+      real log_infections = log_infections_t[p, t];
+      
+      real total_growth = a[p] - b[p] * mobility[p][t];
+      
+      real log_infections_next = log_infections + total_growth;
+      
+      log_infections_t[p, t + 1] = log_infections_next;
+      
+      n_cases[p][t + 1] ~ neg_binomial_2_log(log_infections_next, nb_theta);
+    }
   }
+  
+  
 }
 
 generated quantities {
-  vector[N] n_cases_sim;
-  vector[N] growth_rate;
-  n_cases_sim[1] = 1;
+  array[n_pops, t_max] real n_cases_sim;
+  array[n_pops, t_max] real growth_rate;
   
-  vector[N] log_infections_t;
-  log_infections_t[1] = I_log_0;
+  array[n_pops, t_max] real log_infections_t;
   
-  for(i in 1:(N - 1)) {
-    real log_infections = log_infections_t[i];
+  
+  for(p in 1:n_pops) {
+    log_infections_t[p, 1] = I_log_0[p];
     
-    real total_growth = a - b * mobility[i] - gamma;
+    n_cases_sim[p, 1] = neg_binomial_2_log_rng(log_infections_t[p, 1], nb_theta);
     
-    real log_infections_next = log_infections + total_growth;
-    
-    log_infections_t[i + 1] = log_infections_next;
-    
-    n_cases_sim[i + 1] = neg_binomial_2_log_rng(log_infections_next, theta);
-    growth_rate[i] = total_growth;
+    for(t in 1:(t_max - 1)) {
+      real log_infections = log_infections_t[p, t];
+      
+      real total_growth = a[p] - b[p] * mobility[p][t];
+      
+      real log_infections_next = log_infections + total_growth;
+      
+      log_infections_t[p, t + 1] = log_infections_next;
+      
+      n_cases_sim[p, t + 1] = neg_binomial_2_log_rng(log_infections_next, nb_theta);
+      growth_rate[p, t] = total_growth;
+    }
   }
 }
