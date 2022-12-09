@@ -106,20 +106,18 @@ fit <- mod$sample(
 )
 
 
-fit <- mod$optimize(
-  data = data_list,
-  seed = 2,
-)
+# fit <- mod$optimize(
+#   data = data_list,
+#   seed = 2,
+# )
 
-fit$draws(c("a[1]", "b[1]", "I_log_0[1]", "n_cases_sim[1,75]")) %>%
-  mcmc_pairs()
 fit$draws(c("a[1]", "b", "I_log_0[1]", "n_cases_sim[1,75]")) %>%
   mcmc_pairs()
 
-fit$draws(c("a[1]", "a[2]", "a[3]", "b[1]", "b[2]", "b[3]")) %>%
+fit$draws(c("a[1]", "a[2]", "a[3]", "b")) %>%
   mcmc_pairs()
 
-fit$draws(c("a[1]", "b[1]")) %>%
+fit$draws(c("a[1]", "a[2]", "b")) %>%
   mcmc_hist()
 
 
@@ -140,6 +138,7 @@ spread_draws(fit$draws(), n_cases_sim[LGA][t]) %>%
 spread_draws(fit$draws(), growth_rate[LGA][t]) %>%
   filter(.draw %% 100 == 1) %>% 
   mutate(LGA = LGA_names[LGA]) %>% 
+  filter(LGA == "Melbourne (C)") %>% 
   ggplot() +
   geom_line(aes(x = t, y = growth_rate, group = interaction(.draw, LGA), colour = LGA)) +
   
@@ -202,3 +201,33 @@ spread_draws(fit$draws(), c(a, b)[LGA]) %>%
   
   plot_theme
 
+
+
+spread_draws(fit$draws(), c(a, b)[LGA]) %>%
+  filter(.draw %% 100 == 1) %>% 
+  mutate(LGA = LGA_names[LGA]) %>%
+  
+  expand_grid(m = seq(0.5, 1.5, by = 0.01)) %>%
+  
+  left_join(
+    fit_data %>%
+      group_by(LGA) %>%
+      summarise(min_mobility = min(mobility),
+                max_mobility = max(mobility)),
+    
+    by = "LGA"
+  ) %>% 
+  filter(m >= min_mobility, m <= max_mobility) %>% 
+  
+  mutate(g = a - b * m) %>%
+  
+  ggplot() +
+  
+  geom_line(aes(x = m, y = g, group = interaction(LGA, .draw), colour = LGA)) +
+  
+  geom_hline(yintercept = 0) +
+  
+  facet_wrap(~LGA) +
+  
+  plot_theme
+  

@@ -18,7 +18,10 @@ source("R/process_case_data.R")
 source("R/plot_case_data.R")
 source("R/get_mobility_data.R")
 
-source("R/fit_reff.R")
+source("R/get_vaccination_data.R")
+
+source("R/get_model_data.R")
+source("R/fit_model.R")
 
 list(
   tar_target(
@@ -46,8 +49,35 @@ list(
   ),
   
   tar_target(
-    reff_fit,
+    vaccination_data,
     
-    fit_reff(case_data)
+    get_vaccination_data(LGAs = unique(case_data$LGA))
+  ),
+  
+  tar_target(
+    model_data,
+    
+    get_model_data(
+      case_data,
+      mobility_data,
+      vaccination_data
+    )
+  ),
+  
+  tar_target(
+    model_file,
+    "src/growth_rate_vacc.stan",
+    format = "file"
+  ),
+  
+  tar_target(
+    model,
+    cmdstanr::cmdstan_model(model_file)
+  ),
+  
+  tar_target(
+    model_fit,
+    fit_model(model, model_data),
+    format = "file"
   )
 )

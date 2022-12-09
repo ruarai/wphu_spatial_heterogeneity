@@ -9,8 +9,7 @@ source("R/plot_theme.R")
 case_data <- tar_read(case_data)
 LGAs <- unique(case_data$LGA)
 
-#date_period <- c(ymd("2021-11-01"), ymd("2022-07-01"))
-
+date_period <- c(first(model_data$dates_wt), last(model_data$dates_wt))
 
 
 case_counts <- case_data %>%
@@ -53,55 +52,46 @@ pred_data_cases <- expand_grid(
 ) %>%
   mutate(
     t = as.numeric(date - ymd("2020-01-01")),
-    #dow = wday(date)
-    dow = 3.5
-    
+    dow = 3.5,
+    row = row_number()
   ) %>%
-  mutate(
-    pred_log_cases = predict(gam_fit_cases, newdata = .),
-    pred_cases = exp(pred_log_cases),
-    
-    pred_var = pred_cases + (pred_cases) ^ 2 / theta,
-    
-    p = (pred_var - pred_cases) / (pred_var),
-    
-    pred_cases_lower = qnbinom(0.05, size = theta, prob = 1 - p),
-    pred_cases_upper = qnbinom(0.95, size = theta, prob = 1 - p)
-  )
-
-
-
-modelling_data_cases <- pred_data_cases %>%
-  
   left_join(
-    case_counts %>% select(-date),
-    
-    by = c("LGA", "t")
+    gratia::fitted_samples(gam_fit_cases, n = 500, seed = 0, newdata = ., scale = "linear_predictor"),
+    by = "row"
   ) %>%
-  
-  mutate(
-    diff = (n_cases - pred_cases) / pred_cases,
-    outlier = n_cases > pred_cases_upper | n_cases < pred_cases_lower,
-    
-    p_cases = pnbinom(n_cases, size = theta, prob = 1 - p)
-  )
+  select(LGA, date, draw, pred_log_cases = fitted) %>% 
+  group_by(draw, LGA) %>%
+  arrange(date) %>%
+  mutate(growth_rate = pred_log_cases - lag(pred_log_cases))
 
-ggplot(modelling_data_cases) +
-  geom_line(aes(x = date, y = pred_cases)) +
-  geom_line(aes(x = date, y = pred_cases_upper))  +
-  geom_line(aes(x = date, y = pred_cases_lower)) +
+
+ggplot(pred_data_cases) +
+  geom_line(aes(x = date, y = growth_rate, colour = LGA, group = interaction(LGA, draw)))
+
+
+
+
+pred_data_cases %>%
+  ungroup() %>%
+  filter(draw == 1, LGA == "Maribyrnong (C)") %>%
+  drop_na(growth_rate) %>%
+  mutate(G = growth_rate + 0.369,
+         logG = log(G)) %>%
   
-  geom_point(aes(x = date, y = n_cases),
-             colour = ggokabeito::palette_okabe_ito(5),
-             size = 0.6) +
+  select(-draw) %>% 
   
-  scale_y_log10(limits = c(1, NA)) +
+  left_join(model_data$fit_data_tbl_wt, by = c("LGA", "date")) %>%
   
-  facet_wrap(~LGA) +
+  mutate(log_m = log(mobility)) %>%
   
-  xlab("Date") + ylab("Count") +
+  ggplot() +
   
-  ggtitle("Case incidence") +
+  geom_line(aes(x = date, y = logG)) +
   
-  plot_theme
+  geom_line(aes(x = date, y = 0.83 - 8 * log_m))
+
+
+
+
+
 
