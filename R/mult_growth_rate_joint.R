@@ -71,16 +71,7 @@ spread_draws(fit$draws(), log_infections_t_wt[LGA][t]) %>%
 
 
 
-spread_draws(fit$draws(), c(b)[LGA]) %>%
-  filter(.draw %% 4 == 1) %>% 
-  mutate(LGA = LGA_names[LGA]) %>%
-  
-  ggplot() +
-  geom_point(aes(y = LGA, x = b),
-             position = position_jitter(height = 0.3),
-             size = 0.3) +
-  
-  plot_theme
+
 
 
 

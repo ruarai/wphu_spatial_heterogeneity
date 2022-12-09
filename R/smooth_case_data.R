@@ -37,7 +37,7 @@ library(mgcv)
 theta <- 25
 
 gam_fit_cases <- bam(
-  n_cases ~ s(t, k = 20, by = LGA) + s(dow, k = 4) + LGA,
+  n_cases ~ s(t, k = 20, by = LGA) + LGA,
   
   data = case_counts,
   family = nb(theta = 70),
