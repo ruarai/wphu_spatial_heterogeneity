@@ -61,11 +61,13 @@ sim_cases_quants_delta <- spread_draws(model_fit$draws(), n_cases = n_cases_sim_
   select(LGA, date, draw = .draw, value = n_cases_sim_delta) %>%
   make_quants()
 
-plot_cases(
+p_cases_wt <- plot_cases(
   model_data$fit_data_tbl_wt,
   sim_cases_quants_wt
 ) +
   ggtitle("Simulated and observed cases by symptom onset date \u2012 Second wave epidemic")
+p_cases_wt
+p_cases_wt + scale_y_log10() + coord_cartesian(ylim = c(0.75, NA))
 
 plot_cases(
   model_data$fit_data_tbl_delta,
@@ -99,37 +101,57 @@ growth_rate_quants_wt <- spread_draws(model_fit$draws(), mu_wt, gamma, c(b)[LGA]
   mutate(LGA = model_data$LGA_names[LGA]) %>% 
   
   right_join(model_data$fit_data_tbl_wt %>% select(LGA, date, mobility), by = "LGA") %>%
-  filter(LGA == "Melbourne (C)") %>%
   
   mutate(g = mu_wt * (1 - b * as.vector(mobility)) - gamma) %>%
   
   select(LGA, date, draw = .draw, value = g) %>%
   make_quants()
 
-true_growth_rate_quants_wt <- pred_data_cases %>%
-  ungroup() %>%
-  filter(LGA == "Melbourne (C)") %>% 
-  select(LGA, date, draw, value = growth_rate) %>%
-  make_quants()
-
 ggplot() +
   
-  geom_ribbon(aes(x = date, ymin = lower, ymax = upper, fill = quant),
+  geom_ribbon(aes(x = date, ymin = lower, ymax = upper, fill = LGA,
+                  group = interaction(LGA, quant), alpha = quant),
               growth_rate_quants_wt) +
   
-  geom_ribbon(aes(x = date, ymin = lower, ymax = upper, fill = quant),
-              alpha = 0.2,
-              true_growth_rate_quants_wt) +
+  #scale_fill_manual(values = quant_fills) +
   
-  scale_fill_manual(values = quant_fills) +
+  scale_alpha_manual(values = alpha_vals) +
   
   xlab(NULL) + ylab("Growth rate") +
+  
   
   plot_theme +
   theme(legend.position = "none")
 
 
+growth_rate_quants_wt <- spread_draws(model_fit$draws(), mu_wt, gamma, c(b)[LGA]) %>%
+  ungroup() %>%
+  filter(.draw %% 10 == 1) %>% 
+  mutate(LGA = model_data$LGA_names[LGA]) %>% 
+  
+  right_join(model_data$fit_data_tbl_wt %>% select(LGA, date, mobility) %>%
+               group_by(LGA) %>% summarise(m_min = min(mobility), m_max = max(mobility), m_mean = mean(mobility)),
+             by = "LGA") %>% 
+  #filter(LGA == "Melbourne (C)") %>%
+  
+  expand_grid(m = seq(0.1, 2, by = 0.05)) %>% 
+  filter(m >= m_min, m <= m_max) %>% 
+  
+  mutate(g = -mu_wt * b * 100 / gamma,
+         m_adj = m - m_mean) %>%
+  
+  select(LGA, m, m_adj, draw = .draw, value = g) %>%
+  make_quants()
 
+
+ggplot(growth_rate_quants_wt) +
+  geom_linerange(aes(x = LGA, ymin = lower, ymax = upper, group = interaction(LGA, quant), alpha = quant, fill = LGA)) +
+  
+  scale_alpha_manual(values = alpha_vals) +
+  
+  #geom_hline(yintercept = 0) +
+  
+  plot_theme
 
 
 
