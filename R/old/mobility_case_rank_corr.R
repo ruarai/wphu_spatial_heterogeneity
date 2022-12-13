@@ -9,7 +9,7 @@ mobility_data <- tar_read(mobility_data)
 case_data <- tar_read(case_data)
 
 
-period <- c(ymd("2021-12-01"), ymd("2022-07-01"))
+period <- c(ymd("2020-06-01"), ymd("2020-10-01"))
 
 
 mobility_plot_data <- mobility_data %>%

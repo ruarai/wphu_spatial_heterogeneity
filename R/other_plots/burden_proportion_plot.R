@@ -54,15 +54,15 @@ outside_cumulative_cases_metro <- all_case_data %>%
   mutate(n = cumsum(n) / non_WPHU_LGAs_pop) 
 
 ggplot() +
-  geom_step(aes(x = date, y = n * 100 - 0.03, colour = "within"),
+  geom_step(aes(x = date, y = n * 100, colour = "within"),
             size = 0.9,
-            cumulative_cases)  +
-  geom_step(aes(x = date, y = n * 100 - 0.03, colour = "without"),
+            cumulative_cases %>% mutate(n = n - n[date == ymd("2020-06-01")]))   +
+  geom_step(aes(x = date, y = n * 100, colour = "without"),
             size = 0.9,
-            outside_cumulative_cases_metro) +
+            outside_cumulative_cases_metro %>% mutate(n = n - n[date == ymd("2020-06-01")]))  +
   
   coord_cartesian(xlim = c(ymd("2020-06-01"), ymd("2020-10-01")),
-                  ylim = c(0, 0.75)) +
+                  ylim = c(0, 1)) +
   plot_theme +
   
   
@@ -100,12 +100,12 @@ ggsave(
 
 
 ggplot() +
-  geom_step(aes(x = date, y = n * 100 - 0.7, colour = "within"),
+  geom_step(aes(x = date, y = n * 100, colour = "within"),
             size = 0.9,
-            cumulative_cases)  +
-  geom_step(aes(x = date, y = n * 100 - 0.23, colour = "without"),
+            cumulative_cases %>% mutate(n = n - n[date == ymd("2021-09-01")]))   +
+  geom_step(aes(x = date, y = n * 100, colour = "without"),
             size = 0.9,
-            outside_cumulative_cases_metro) +
+            outside_cumulative_cases_metro %>% mutate(n = n - n[date == ymd("2021-09-01")])) +
   
   coord_cartesian(xlim = c(ymd("2021-09-01"), ymd("2021-12-15")),
                   ylim = c(0, 3.5)) +

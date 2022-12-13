@@ -1,6 +1,12 @@
 
+library(targets)
+library(tidyverse)
+library(lubridate)
+
+library(tidybayes)
 
 source("R/plot_theme.R")
+source("R/make_results_quants.R")
 
 model_data <- tar_read(model_data)
 model_fit <- read_rds(tar_read(model_fit))
@@ -66,6 +72,7 @@ p_cases_wt <- plot_cases(
   sim_cases_quants_wt
 ) +
   ggtitle("Simulated and observed cases by symptom onset date \u2012 Second wave epidemic")
+
 p_cases_wt
 p_cases_wt + scale_y_log10() + coord_cartesian(ylim = c(0.75, NA))
 
