@@ -144,7 +144,7 @@ growth_rate_quants_wt <- spread_draws(model_fit$draws(), mu_wt, gamma, c(b)[LGA]
   expand_grid(m = seq(0.1, 2, by = 0.05)) %>% 
   filter(m >= m_min, m <= m_max) %>% 
   
-  mutate(g = -mu_wt * b * 100 / gamma,
+  mutate(g = b,
          m_adj = m - m_mean) %>%
   
   select(LGA, m, m_adj, draw = .draw, value = g) %>%

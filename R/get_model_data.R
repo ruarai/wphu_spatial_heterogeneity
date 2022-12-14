@@ -9,7 +9,7 @@ get_model_data <- function(
   
   
   date_period_wt <- c(ymd("2020-05-25"), ymd("2020-10-15"))
-  date_period_delta <- c(ymd("2021-07-25"), ymd("2021-11-15"))
+  date_period_delta <- c(ymd("2021-08-07"), ymd("2021-11-15"))
   
   
   
@@ -28,10 +28,10 @@ get_model_data <- function(
   
   
   ## TODO justify
-  mobility_smooth_delta <- mobility_smooth_delta %>%
-    mutate(mobility = if_else(date <= ymd("2021-08-15"), NA_real_, mobility)) %>%
-    group_by(LGA) %>%
-    fill(mobility, .direction = "up")
+  # mobility_smooth_delta <- mobility_smooth_delta %>%
+  #   mutate(mobility = if_else(date <= ymd("2021-08-15"), NA_real_, mobility)) %>%
+  #   group_by(LGA) %>%
+  #   fill(mobility, .direction = "up")
   
   
   fit_data_wt <- case_counts_wt %>%
@@ -63,8 +63,7 @@ get_model_data <- function(
       mutate(LGA = factor(LGA, unique(LGA))) %>% 
       pivot_wider(names_from = LGA, values_from = all_of(col)) %>%
       select(-date) %>%
-      as.matrix() %>%
-      t()
+      as.matrix()
   }
   
   
@@ -83,16 +82,23 @@ get_model_data <- function(
     mobility_wt = fit_data_to_matrix(fit_data_wt, mobility),
     mobility_delta = fit_data_to_matrix(fit_data_delta, mobility),
     
-    p_second_dose = fit_data_to_matrix(fit_data_delta, p_second_dose),
+    p_vacc = fit_data_to_matrix(fit_data_delta, p_second_dose),
     
     LGA_names = LGAs,
     dates_wt = fit_data_wt$date %>% unique(),
     dates_delta = fit_data_delta$date %>% unique(),
     
+    t_ix_wt = fit_data_wt$t %>% unique(),
+    t_ix_delta = fit_data_delta$t %>% unique(),
+    
     fit_data_tbl_wt = fit_data_wt,
     fit_data_tbl_delta = fit_data_delta,
     
-    nb_theta = 60
+    nb_theta = 60,
+    
+    
+    rho = 7,
+    alpha = 0.005
   )
   
   
