@@ -18,11 +18,10 @@ model_data_stan <- model_data[c("t_max_wt", "n_pops", "n_cases_wt", "mobility_wt
                                 "t_max_delta", "n_cases_delta", "mobility_delta", "p_vacc",
                                 "t_ix_wt", "t_ix_delta", "rho", "alpha")]
 
-# fit <- model$optimize(
-#   data = model_data_stan,
-#   iter = 10000
-# )
-
+fit <- model$optimize(
+  data = model_data_stan,
+  iter = 10000
+)
 fit <- model$sample(
   data = model_data_stan, 
   seed = 4, 
@@ -107,7 +106,7 @@ p_cases_delta
 error_quants_wt <- spread_draws(fit$draws(), n_cases = log_f_pred_wt[t, LGA]) %>%
   ungroup() %>%
   mutate(date = model_data$dates_wt[t],
-         LGA = data_list$LGA_names[LGA]) %>%
+         LGA = model_data$LGA_names[LGA]) %>%
   
   select(date, LGA, draw = .draw, value = log_f_pred_wt) %>%
   make_quants()
@@ -129,7 +128,7 @@ ggplot(error_quants_wt) +
 error_quants_delta <- spread_draws(fit$draws(), n_cases = log_f_pred_delta[t, LGA]) %>%
   ungroup() %>%
   mutate(date = model_data$dates_wt[t],
-         LGA = data_list$LGA_names[LGA]) %>%
+         LGA = model_data$LGA_names[LGA]) %>%
   
   select(date, LGA, draw = .draw, value = log_f_pred_delta) %>%
   make_quants()
@@ -152,9 +151,9 @@ sim_g <- spread_draws(
   fit$draws(), gamma, mu_wt, log_f_pred_wt[t, LGA], b[LGA]) %>%
   ungroup() %>%
   mutate(date = model_data$dates_wt[t],
-         LGA = data_list$LGA_names[LGA]) %>%
+         LGA = model_data$LGA_names[LGA]) %>%
   
-  left_join(fit_data_wt, by = c("date", "t", "LGA")) %>%
+  left_join(model_data$fit_data_tbl_wt, by = c("date", "t", "LGA")) %>%
   
   mutate(g = mu_wt * (1 - mobility * b) - gamma,
          g_adj = mu_wt * (1 - mobility * b) - gamma + log_f_pred_wt) 
