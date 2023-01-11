@@ -50,7 +50,7 @@ plot_cases <- function(fit_data) {
     
     ggplot() +
     
-    geom_point(aes(x = date, y = n_cases),
+    geom_point(aes(x = date, y = n_cases, colour = LGA),
                size = 0.6) +
     
     scale_y_log10(labels = scales::label_comma()) +
@@ -124,9 +124,14 @@ model_data$fit_data_tbl_wt %>%
   filter(LGA == "Moreland (C)" | LGA == "Brimbank (C)")  %>%
   plot_cases() +
   ggtitle("Case incidence") +
+  
+  ggokabeito::scale_colour_okabe_ito(order = c(3, 6)) +
+  
   facet_wrap(~LGA, ncol = 1) +
   
-  scale_y_continuous()
+  scale_y_continuous() +
+  
+  theme(legend.position = "none")
 
 
 ggsave(
@@ -174,9 +179,13 @@ model_data$fit_data_tbl_delta %>%
   filter(LGA == "Wyndham (C)" | LGA == "Moonee Valley (C)")  %>%
   plot_cases() +
   ggtitle("Case incidence") +
+  
+  ggokabeito::scale_colour_okabe_ito(order = c(1, 2)) +
   facet_wrap(~LGA, ncol = 1) +
   
-  scale_y_continuous()
+  scale_y_continuous() +
+  
+  theme(legend.position = "none")
 
 
 
@@ -205,4 +214,78 @@ ggsave(
   "results/mobility_single_delta.png",
   bg = "white",
   width = 6, height = 3, dpi = 300
+)
+
+
+model_data$fit_data_tbl_wt %>%
+  filter(LGA == "Brimbank (C)" | LGA == "Moreland (C)") %>%
+  
+  ggplot() +
+  
+  geom_line(aes(x = date, y = mobility, colour = LGA),
+            size = 1) +
+  
+  # geom_line(aes(x = date, y = (change + 100) / 100, colour = LGA),
+  #           linetype = "dotted", size = 1) +
+  
+  ggokabeito::scale_colour_okabe_ito(order = c(3,6)) +
+  
+  plot_theme +
+  
+  ggtitle("Increase in time spent in residence") +
+  
+  scale_x_date(breaks = seq(ymd("2020-01-01"), ymd("2022-07-01"), by = "1 months"),
+               labels = scales::label_date_short(format = c("%Y", "%B", "%d"), sep = "\n")) +
+  
+  scale_y_continuous(labels = scales::label_percent()) +
+  
+  coord_cartesian(ylim = c(1, 1.4)) +
+  
+  theme(legend.position = "bottom") + 
+  xlab(NULL) + ylab("Change")
+
+
+
+ggsave(
+  "results/mobility_single_2.png",
+  bg = "white",
+  width = 4, height = 3, dpi = 300
+)
+
+
+
+
+model_data$fit_data_tbl_delta %>%
+  filter(LGA == "Wyndham (C)" | LGA == "Moonee Valley (C)") %>%
+  
+  ggplot() +
+  
+  geom_line(aes(x = date, y = mobility, colour = LGA),
+            size = 1) +
+  
+  # geom_line(aes(x = date, y = (change + 100) / 100, colour = LGA),
+  #           linetype = "dotted", size = 1) +
+  
+  ggokabeito::scale_colour_okabe_ito() +
+  
+  plot_theme +
+  
+  ggtitle("Increase in time spent in residence") +
+  
+  scale_x_date(breaks = seq(ymd("2020-01-01"), ymd("2022-07-01"), by = "1 months"),
+               labels = scales::label_date_short(format = c("%Y", "%B", "%d"), sep = "\n")) +
+  
+  scale_y_continuous(labels = scales::label_percent()) +
+  
+  coord_cartesian(ylim = c(1, 1.4)) +
+  
+  theme(legend.position = "bottom") + 
+  xlab(NULL) + ylab("Change")
+
+
+
+ggsave(
+  "results/mobility_single_2_delta.png",
+  bg = "white",
+  width = 4, height = 3, dpi = 300
 )

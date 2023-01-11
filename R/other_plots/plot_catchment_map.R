@@ -46,6 +46,7 @@ ggplot() +
   coord_sf(label_axes = "----",
            xlim = st_bbox(vic_shapefile)[c(1,3)],
            ylim = st_bbox(vic_shapefile)[c(2, 4)]) +
+  
   p_common +
   
   theme(panel.background = element_rect(fill = water_col))
@@ -68,5 +69,7 @@ ggplot() +
            ylim = c(-37.5, -38.01), xlim = c(144.4, 145.05)) +
   
   theme(panel.background = element_rect(fill = water_col))
+
+
 
 

@@ -16,8 +16,6 @@ model_fit <- read_rds(tar_read(model_fit))
 
 
 
-alpha_vals <- scales::rescale(rev(1/1.7^(1:4)), to = c(0.2, 0.99))
-quant_fills <- shades::opacity("#006699", alpha_vals)
 
 
 plot_cases <- function(obs_fit_data, case_quants) {
@@ -100,6 +98,10 @@ spread_draws(model_fit$draws(), c(b)[LGA]) %>%
              position = position_jitter(height = 0.3),
              size = 0.3) +
   
+  geom_point(aes(y = LGA, x = LGA_mean),
+             colour = ggokabeito::palette_okabe_ito(5),
+             size = 2) +
+  
   plot_theme
 
 growth_rate_quants_wt <- spread_draws(model_fit$draws(), mu_wt, gamma, c(b)[LGA]) %>%
@@ -152,7 +154,8 @@ growth_rate_quants_wt <- spread_draws(model_fit$draws(), mu_wt, gamma, c(b)[LGA]
 
 
 ggplot(growth_rate_quants_wt) +
-  geom_linerange(aes(x = LGA, ymin = lower, ymax = upper, group = interaction(LGA, quant), alpha = quant, fill = LGA)) +
+  geom_linerange(aes(x = LGA, ymin = lower, ymax = upper, group = interaction(LGA, quant), alpha = quant, fill = LGA),
+                 size = 12) +
   
   scale_alpha_manual(values = alpha_vals) +
   

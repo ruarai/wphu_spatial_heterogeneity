@@ -22,6 +22,7 @@ fit <- model$optimize(
   data = model_data_stan,
   iter = 10000
 )
+
 fit <- model$sample(
   data = model_data_stan, 
   seed = 4, 
@@ -212,7 +213,7 @@ spread_draws(
   fit$draws(), gamma, mu_wt, log_infections_t_delta[t, LGA]) %>%
   ungroup() %>%
   mutate(date = model_data$dates_delta[t],
-         LGA = data_list$LGA_names[LGA])  %>%
+         LGA = model_data$LGA_names[LGA])  %>%
   select(date, LGA, draw = .draw, value = log_infections_t_delta) %>%
   make_quants() %>% 
   ggplot()  +

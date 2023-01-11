@@ -12,25 +12,11 @@ data {
   
   array[t_max_delta, n_pops] real p_vacc;
   
-  real<lower=0> rho;
-  real<lower=0> alpha;
-  
   array[t_max_wt] real t_ix_wt;
   array[t_max_delta] real t_ix_delta;
   
   real nb_theta;
 }
-
-transformed data {
-  matrix[t_max_wt, t_max_wt] cov_wt = gp_exp_quad_cov(t_ix_wt, alpha, rho) +
-  diag_matrix(rep_vector(1e-10, t_max_wt));
-  matrix[t_max_wt, t_max_wt] L_cov_wt = cholesky_decompose(cov_wt);
-  
-  matrix[t_max_delta, t_max_delta] cov_delta = gp_exp_quad_cov(t_ix_delta, alpha, rho) +
-  diag_matrix(rep_vector(1e-10, t_max_delta));
-  matrix[t_max_delta, t_max_delta] L_cov_delta = cholesky_decompose(cov_delta);
-}
-
 parameters {
   vector[n_pops] b;
   
@@ -41,6 +27,10 @@ parameters {
   real<lower=0> mu_wt;
   real<lower=0> mu_delta;
   
+  
+  real<lower=0> rho;
+  real<lower=0> alpha;
+  
   vector[n_pops] I_log_0_wt;
   vector[n_pops] I_log_0_delta;
   
@@ -49,6 +39,15 @@ parameters {
 }
 
 transformed parameters {
+  
+  matrix[t_max_wt, t_max_wt] cov_wt = gp_exp_quad_cov(t_ix_wt, alpha, rho) +
+  diag_matrix(rep_vector(1e-10, t_max_wt));
+  matrix[t_max_wt, t_max_wt] L_cov_wt = cholesky_decompose(cov_wt);
+  
+  matrix[t_max_delta, t_max_delta] cov_delta = gp_exp_quad_cov(t_ix_delta, alpha, rho) +
+  diag_matrix(rep_vector(1e-10, t_max_delta));
+  matrix[t_max_delta, t_max_delta] L_cov_delta = cholesky_decompose(cov_delta);
+  
   matrix[t_max_wt, n_pops] log_f_pred_wt;
   matrix[t_max_delta, n_pops] log_f_pred_delta;
   
@@ -73,6 +72,14 @@ model {
   
   I_log_0_wt ~ normal(0, 1);
   I_log_0_delta ~ normal(0, 1);
+  
+  
+  
+  // P[rho < 2.0] = 0.01
+  // P[rho > 10] = 0.01
+  rho ~ inv_gamma(8.91924, 34.5805);
+  
+  alpha ~ lognormal(-5, 0.5);
   
   for(p in 1:n_pops) {
     f_wt[, p] ~ normal(0, 1);
