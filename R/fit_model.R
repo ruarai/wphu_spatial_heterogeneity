@@ -4,9 +4,13 @@ fit_model <- function(model, model_data) {
   
   require(cmdstanr)
   
+  model_data_stan <- model_data[c("t_max_wt", "n_pops", "n_cases_wt", "mobility_wt", "nb_theta",
+                                  "t_max_delta", "n_cases_delta", "mobility_delta", "p_vacc",
+                                  "t_ix_wt", "t_ix_delta", "rho", "alpha")]
+  
   fit <- model$sample(
-    data = model_data[c("n_pops", "t_max_wt", "t_max_delta", "n_cases_wt", "n_cases_delta", "mobility_wt", "mobility_delta", "p_second_dose", "nb_theta")], 
-    seed = 5, 
+    data = model_data_stan, 
+    seed = 4, 
     chains = 4, 
     parallel_chains = 4,
     refresh = 100,
