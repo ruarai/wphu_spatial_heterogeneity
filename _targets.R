@@ -11,11 +11,11 @@ library(lubridate, warn.conflicts = FALSE)
 
 source("R/periods.R")
 source("R/population.R")
-source("R/plot_theme.R")
+source("R/plots/plot_theme.R")
 
 
 source("R/process_case_data.R")
-source("R/plot_case_data.R")
+source("R/plots/plot_case_data.R")
 source("R/get_mobility_data.R")
 
 source("R/get_vaccination_data.R")

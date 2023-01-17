@@ -1,6 +1,6 @@
 
 
-source("R/plot_theme.R")
+source("R/plots/plot_theme.R")
 
 model_data <- tar_read(model_data)
 
@@ -122,10 +122,11 @@ ggsave(
 
 model_data$fit_data_tbl_wt %>%
   filter(LGA == "Moreland (C)" | LGA == "Brimbank (C)")  %>%
+  mutate(LGA = factor(LGA, levels = c("Moreland (C)", "Brimbank (C)"))) %>% 
   plot_cases() +
   ggtitle("Case incidence") +
   
-  ggokabeito::scale_colour_okabe_ito(order = c(3, 6)) +
+  ggokabeito::scale_colour_okabe_ito(order = c(6, 3)) +
   
   facet_wrap(~LGA, ncol = 1) +
   

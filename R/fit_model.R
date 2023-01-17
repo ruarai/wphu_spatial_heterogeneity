@@ -15,7 +15,7 @@ fit_model <- function(model, model_data) {
     parallel_chains = 4,
     refresh = 100,
     iter_warmup = 1000,
-    iter_sampling = 1000
+    iter_sampling = 4000
   )
   
   file_out <- "data/cmdstanr_fit.rds"
