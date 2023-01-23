@@ -10,12 +10,18 @@ fit_model <- function(model, model_data) {
   
   fit <- model$sample(
     data = model_data_stan, 
+    output_dir = "data/cmdstanr/",
+    
     seed = 4, 
+    
+    
     chains = 4, 
     parallel_chains = 4,
+    
     refresh = 100,
+    
     iter_warmup = 1000,
-    iter_sampling = 4000
+    iter_sampling = 1000
   )
   
   file_out <- "data/cmdstanr_fit.rds"
