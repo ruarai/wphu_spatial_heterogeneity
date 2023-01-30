@@ -66,7 +66,7 @@ list(
   
   tar_target(
     model_file,
-    "src/growth_rate_vacc_gp.stan",
+    "src/growth_rate_vacc.stan",
     format = "file"
   ),
   

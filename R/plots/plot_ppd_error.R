@@ -26,6 +26,15 @@ sim_g <- spread_draws(
   mutate(g = mu_wt * (1 - mobility * b) - gamma,
          g_adj = mu_wt * (1 - mobility * b) - gamma + log_f_pred_wt) 
 
+
+make_quants <- . %>%
+  
+  pivot_wider(names_from = draw,
+              names_prefix = "draw_",
+              values_from = value) %>%
+  make_results_quants(c(0.5, 0.9, 0.95, 0.99), col_prefix = "draw_")
+
+
 sim_g_quants <- sim_g %>%
   select(date, LGA, draw = .draw, value = g) %>%
   make_quants()

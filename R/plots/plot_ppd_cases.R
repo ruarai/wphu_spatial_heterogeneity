@@ -18,17 +18,18 @@ model_fit <- read_rds(tar_read(model_fit))
 
 
 
+
 plot_cases <- function(obs_fit_data, case_quants) {
   ggplot() +
     geom_ribbon(aes(x = date, ymin = lower, ymax = upper, fill = quant),
-                case_quants) +
+                case_quants %>% fix_LGA) +
     
     geom_point(aes(x = date, y = n_cases), 
-               obs_fit_data,
+               obs_fit_data %>% fix_LGA,
                size = 0.5) +
     
     geom_point(aes(x = date, y = n_cases), 
-               obs_fit_data,
+               obs_fit_data %>% fix_LGA,
                colour = "white",
                size = 0.1, stroke = 0.3)  +
     
@@ -84,7 +85,7 @@ ggsave(
   width = 6, height = 4, dpi = 300
 )
 
-p_cases_wt + scale_y_log10() + coord_cartesian(ylim = c(0.75, NA))
+p_cases_wt + scale_y_log10() + coord_cartesian(ylim = c(-2, NA))
 
 plot_cases(
   model_data$fit_data_tbl_delta,

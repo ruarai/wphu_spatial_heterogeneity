@@ -1,5 +1,7 @@
 
 
+fix_LGA <- . %>% mutate(LGA = str_remove(LGA, " \\(C\\)"))
+
 plot_theme <- list(
   theme_bw(),
   theme(

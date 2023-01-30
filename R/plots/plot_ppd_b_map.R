@@ -82,7 +82,7 @@ ggplot() +
           size = 0.4,
           data = wphu_lga_data) +
   
-  scale_fill_distiller(type = "seq", palette = "YlGn",
+  scale_fill_distiller(type = "seq", palette = "RdPu", direction = 1,
                        name = "") +
   
   p_common +
@@ -92,3 +92,10 @@ ggplot() +
   
   theme(panel.background = element_rect(fill = water_col),
         legend.position = "bottom")
+
+
+ggsave(
+  "results/pdd_b_map.png",
+  bg = "white",
+  width = 3, height = 3, dpi = 300
+)
