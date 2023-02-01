@@ -28,3 +28,13 @@ ggplot(draws_VE) +
   coord_cartesian(xlim = c(0, 1)) +
   
   plot_theme
+
+
+
+
+
+ggsave(
+  "results/ppd_VE.png",
+  bg = "white",
+  width = 4, height = 3, dpi = 300
+)

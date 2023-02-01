@@ -14,6 +14,7 @@ data {
   
   real nb_theta;
 }
+
 parameters {
   vector[n_pops] b;
   
